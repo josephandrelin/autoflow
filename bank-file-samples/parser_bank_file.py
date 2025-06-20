@@ -6,7 +6,7 @@ def parser_bank_csv(file_path: str) -> dict:
     解析包含銀行交易數據的 CSV 文件並返回一個 DataFrame
     這裡假設 CSV 文件的編碼為 UTF-8，並且 TX_TIME 欄位為字符串類型
     """
-    df = pd.read_csv(file_path, encoding='utf-8', dtype={"": str, "TX_TIME": str}) 
+    df = pd.read_csv(file_path, encoding='utf-8', dtype={"TX_DATE": str, "TX_TIME": str, "AMOUNT": str}) 
     return df.to_dict(orient="records")
 
 
@@ -67,9 +67,6 @@ def parser_bank_zip(filename: str, passwd: str) -> dict:
 csv_data = parser_bank_csv("sample_a.csv")
 print (f"parser_bank_csv --> {csv_data}")
 
-結果
-parser_bank_csv --> [{'CUSTNO': '710P', 'TX_DATE': 20250617, 'TX_TIME': '140545', 'AMOUNT': 50000, 'VRNUM': 77777000012547, 'REMARKS': 'TEST01'}, {'CUSTNO': '710P', 'TX_DATE': 20250617, 'TX_TIME': '080705', 'AMOUNT': 100000, 'VRNUM': 77777000012550, 'REMARKS': 'TEST02'}, {'CUSTNO': '710P', 'TX_DATE': 20250617, 'TX_TIME': '094215', 'AMOUNT': 80000, 'VRNUM': 77777000012554, 'REMARKS': 'TEST03'}, {'CUSTNO': '710P', 'TX_DATE': 20250617, 'TX_TIME': '102505', 'AMOUNT': 40000, 'VRNUM': 77777000012514, 'REMARKS': 'TEST04'}, {'CUSTNO': '710P', 'TX_DATE': 20250617, 'TX_TIME': '133005', 'AMOUNT': 90000, 'VRNUM': 77777000012509, 'REMARKS': 'TEST05'}, {'CUSTNO': '710P', 'TX_DATE': 20250617, 'TX_TIME': '121212', 'AMOUNT': 120000, 'VRNUM': 77777000012523, 'REMARKS': 'TEST06'}, {'CUSTNO': '710P', 'TX_DATE': 20250617, 'TX_TIME': '115312', 'AMOUNT': 150000, 'VRNUM': 77777000012544, 'REMARKS': 'TEST07'}]
-
 # 解析範例檔案副檔名為 txt ，且按照規格賦予至字典中
 txt_data = parser_bank_txt("sample_b.txt", encoding='big5')
 print (f"parser_bank_txt --> {txt_data}")
@@ -77,3 +74,4 @@ print (f"parser_bank_txt --> {txt_data}")
 # 解析範例檔案副檔名為 zip ，且帶有密碼，並判斷副檔名為 csv 或 txt，並轉換成字典
 zip_data = parser_bank_zip("sample_c.zip", passwd="12345678")
 print (f"parser_bank_zip --> {zip_data}")
+    
