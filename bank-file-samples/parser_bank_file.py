@@ -6,7 +6,7 @@ def parser_bank_csv(file_path: str) -> dict:
     解析包含銀行交易數據的 CSV 文件並返回一個 DataFrame
     這裡假設 CSV 文件的編碼為 UTF-8，並且 TX_TIME 欄位為字符串類型
     """
-    df = pd.read_csv(file_path, encoding='utf-8', dtype={"TX_TIME": str}) 
+    df = pd.read_csv(file_path, encoding='utf-8', dtype={"TX_DATE": str, "TX_TIME": str, "AMOUNT": str}) 
     return df.to_dict(orient="records")
 
 
