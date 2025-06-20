@@ -1,44 +1,77 @@
-import os
 import zipfile
+import pandas as pd
 
-# Create directories to store updated samples
-output_dir = "/mnt/data/bank_samples"
-os.makedirs(output_dir, exist_ok=True)
+def parser_bank_csv(file_path: str) -> dict:
+    """
+    解析包含銀行交易數據的 CSV 文件並返回一個 DataFrame
+    這裡假設 CSV 文件的編碼為 UTF-8，並且 TX_TIME 欄位為字符串類型
+    """
+    df = pd.read_csv(file_path, encoding='utf-8', dtype={"TX_TIME": str}) 
+    return df.to_dict(orient="records")
 
-# Updated Sample A: CSV file (UTF-8)
-sample_a_content = """account_number,amount,ref_code,date
-12345678,1500,RF20250521,2025-05-21
-87654321,2200,RF20250522,2025-05-22
-"""
-sample_a_path = os.path.join(output_dir, "sample_a.csv")
-with open(sample_a_path, "w", encoding="utf-8") as f:
-    f.write(sample_a_content)
 
-# Updated Sample B: TXT fixed-width file (Big5)
-sample_b_lines = [
-    "12345678901500002520250521RF20250521",
-    "98765432102200003220250522RF20250522"
-]
-sample_b_path = os.path.join(output_dir, "sample_b.txt")
-with open(sample_b_path, "w", encoding="big5") as f:
-    f.write("\n".join(sample_b_lines))
+def parser_bank_txt(file_path: str, encoding: str = 'utf-8') -> dict:
+    """
+    解析包含銀行交易數據的 txt 文件並返回一個 dictionary
+    這裡假設 txt 文件的編碼為指定的 encoding，這部分可以根據實際情況調整
+    """
+    # 先將檔案內資料讀出，並賦予 data 變數
+    with open(file_path, 'r', encoding=encoding) as f:
+        data = f.readlines()
+    
+    # 將每一行資料轉換為字典格式，並append 到 dataset 列表中
+    dataset = []
+    for i in data:
+        row = {
+            'CUSTNO': i[0:4],
+            'TX_DATE': i[5:13],
+            'TX_TIME': i[17:23],
+            'AMOUNT': i[24:33].lstrip('0'),  # 去除前導零
+            'VRNUM': i[38:51],
+            'REMARK': i[57:62],
+        }
+        dataset.append(row)
+    return dataset
 
-# Updated Sample C: ZIP with CSV inside (UTF-8)
-sample_c_inner_csv = """acct,amt,ref,date
-34567890,1800,CZ20250521,2025-05-21
-98761234,2400,CZ20250522,2025-05-22
-"""
-inner_csv_name = "C_reconciliation.csv"
-inner_csv_path = os.path.join(output_dir, inner_csv_name)
-with open(inner_csv_path, "w", encoding="utf-8") as f:
-    f.write(sample_c_inner_csv)
 
-# Create ZIP file
-sample_c_zip_path = os.path.join(output_dir, "sample_c.zip")
-with zipfile.ZipFile(sample_c_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-    zipf.write(inner_csv_path, arcname=inner_csv_name)
+def parser_bank_zip(filename: str, passwd: str) -> dict:
+    """
+    解析包含銀行交易數據的 zip 文件並返回一個 dictionary
+    """
+    with zipfile.ZipFile(filename) as zf:
+        # 抓取壓縮檔內的檔案資訊
+        archive = zf.infolist()[0]
+        # 抓取檔案大小，判斷是否為空檔
+        zfSize = archive.file_size
+        # 將壓縮檔內的檔案名稱和副檔名分開
+        zfName, zfext = archive.filename.split('.')
+        # 為方便判斷，將副檔名轉為小寫
+        zfext = zfext.lower()
+        # 解壓縮至當前目錄
+        zf.extract(archive, ".", pwd=passwd.encode('utf-8'))
+        
+        if zfSize == 0:
+            # 如果檔案大小為0，則返回空字典
+            print ('為空檔')
+            return {}
+        else:
+            # 根據副檔名選擇解析函數
+            if zfext == 'csv':
+                return parser_bank_csv(zfName + '.' + zfext)
+            if zfext == 'txt':
+                return parser_bank_txt(zfName + '.' + zfext, encoding='big5')
 
-# Clean up temporary CSV used in ZIP
-os.remove(inner_csv_path)
 
-sample_a_path, sample_b_path, sample_c_zip_path
+
+# 解析範例檔案副檔名為 csv 且帶有標題，並轉換成字典
+csv_data = parser_bank_csv("sample_a.csv")
+print (f"parser_bank_csv --> {csv_data}")
+
+# 解析範例檔案副檔名為 txt ，且按照規格賦予至字典中
+txt_data = parser_bank_txt("sample_b.txt", encoding='big5')
+print (f"parser_bank_txt --> {txt_data}")
+
+# 解析範例檔案副檔名為 zip ，且帶有密碼，並判斷副檔名為 csv 或 txt，並轉換成字典
+zip_data = parser_bank_zip("sample_c.zip", passwd="12345678")
+print (f"parser_bank_zip --> {zip_data}")
+    
